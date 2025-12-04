@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personality Quiz</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2e9ff; margin: 0; padding: 0; display: flex; justify-content: center; }
+    .card { width: 90%; max-width: 420px; background: white; margin-top: 40px; padding: 22px; border-radius: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); opacity: 0; transform: translateY(15px); animation: fadeIn 0.5s forwards; }
+    @keyframes fadeIn { to { opacity:1; transform:translateY(0);} }
+    .btn { background:#cabdff; border:none; padding:12px 20px; width:100%; margin-top:18px; border-radius:12px; font-size:17px; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.15); transition:0.3s; }
+    .btn:hover { background:#c2d0ff; transform:scale(1.03); }
+    .question { font-size:20px; margin-bottom:20px; color:#6d3ba8; }
+    .options button { margin:8px 0; }
+    #progressBar { width:100%; height:10px; background:#ebd8ff; border-radius:20px; overflow:hidden; margin-top:20px; }
+    #progressFill { width:0%; height:100%; background:#9c6bff; transition:0.35s; }
+    .highlight { background:#e5d4ff; padding:10px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.12); }
+    .badge { display:inline-block; padding:6px 14px; background:#b28bff; color:white; border-radius:20px; font-weight:bold; margin-bottom:12px; }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h2 style="text-align:center; color:#8b33ff;">Personality Quiz</h2>
+    <p id="intro">Welcome! This short 15‑question quiz helps identify your OCEAN personality profile.</p>
+    <button class="btn" id="start">Start Quiz</button>
+  </div>
+
+<script>
+const questions = [
+  "I have a vivid imagination.",
+  "I have excellent ideas.",
+  "I am full of ideas.",
+  "I get chores done right away.",
+  "I like order.",
+  "I follow a schedule.",
+  "I am the life of the party.",
+  "I feel comfortable around people.",
+  "I talk to a lot of people.",
+  "I sympathize with others’ feelings.",
+  "I make people feel at ease.",
+  "I take time out for others.",
+  "I get stressed out easily.",
+  "I worry a lot.",
+  "I get upset easily."
+];
+
+let index = 0;
+let scores = { O:0, C:0, E:0, A:0, N:0 };
+
+function fadeOutIn(element, callback){
+  element.style.opacity = 0;
+  setTimeout(()=>{ callback(); element.style.opacity = 1; }, 300);
+}
+
+document.getElementById("start").addEventListener("click", function(){ loadQuestion(); });
+
+function loadQuestion(){
+  const card = document.getElementById("card");
+  fadeOutIn(card, ()=>{
+    card.innerHTML = `
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <p class="question">${questions[index]}</p>
+      <div class="options">
+        <button class="btn" data-v="5">Strongly Agree</button>
+        <button class="btn" data-v="4">Agree</button>
+        <button class="btn" data-v="3">Neutral</button>
+        <button class="btn" data-v="2">Disagree</button>
+        <button class="btn" data-v="1">Strongly Disagree</button>
+      </div>
+    `;
+
+    document.querySelectorAll(".btn").forEach(btn => {
+      if(btn.dataset.v) btn.addEventListener("click", () => answer(parseInt(btn.dataset.v)));
+    });
+
+    let pct = ((index)/15)*100;
+    document.getElementById("progressFill").style.width = pct + "%";
+  });
+}
+
+function answer(val){
+  if(index < 3) scores.O += val;
+  else if(index < 6) scores.C += val;
+  else if(index < 9) scores.E += val;
+  else if(index < 12) scores.A += val;
+  else scores.N += val;
+
+  index++;
+  if(index >= questions.length){ showResult(); return; }
+  loadQuestion();
+}
+
+function showResult(){
+  const card = document.getElementById("card");
+  fadeOutIn(card, ()=>{
+    const pct = t => Math.round((t/75)*100);
+
+    const desc = {
+      O:{ title:"Openness", badge:"🌈 Creative Mind", strength:"Imaginative, curious", weakness:"May overthink" },
+      C:{ title:"Conscientiousness", badge:"📘 The Organizer", strength:"Disciplined, reliable", weakness:"Perfectionistic" },
+      E:{ title:"Extraversion", badge:"⚡ Social Star", strength:"Energetic, outgoing", weakness:"May get overstimulated" },
+      A:{ title:"Agreeableness", badge:"🤝 The Helper", strength:"Kind, cooperative", weakness:"Avoids conflict" },
+      N:{ title:"Neuroticism", badge:"💜 Sensitive Soul", strength:"Emotionally aware", weakness:"Stress‑prone" }
+    };
+
+    // Find highest trait
+    const highest = Object.entries(scores).sort((a,b)=>b[1]-a[1])[0][0];
+    const hd = desc[highest];
+
+    card.innerHTML = `
+      <h2 style="color:#6c5ce7; text-align:center;">Your Results</h2>
+
+      <div style="padding:15px; background:#f3e9ff; border-radius:15px; box-shadow:0 3px 10px rgba(0,0,0,0.15); margin-bottom:20px; text-align:center;">
+        <h3 style="margin:5px 0; color:#5a2dbf;">Dominant Trait:</h3>
+        <h2 style="margin:5px 0;">${hd.badge}</h2>
+        <p><b>${hd.title}</b> — Strength: ${hd.strength}, Weakness: ${hd.weakness}</p>
+      </div>
+
+      <h3>Scores (out of 75 total):</h3>
+      <p><b>Openness:</b> ${scores.O} (${pct(scores.O)}%)<br><i>${desc.O.strength} — ${desc.O.weakness}</i></p>
+      <p><b>Conscientiousness:</b> ${scores.C} (${pct(scores.C)}%)<br><i>${desc.C.strength} — ${desc.C.weakness}</i></p>
+      <p><b>Extraversion:</b> ${scores.E} (${pct(scores.E)}%)<br><i>${desc.E.strength} — ${desc.E.weakness}</i></p>
+      <p><b>Agreeableness:</b> ${scores.A} (${pct(scores.A)}%)<br><i>${desc.A.strength} — ${desc.A.weakness}</i></p>
+      <p><b>Neuroticism:</b> ${scores.N} (${pct(scores.N)}%)<br><i>${desc.N.strength} — ${desc.N.weakness}</i></p>
+
+      <button class="btn" id="retry">Retake Quiz</button>
+    `;
+
+    document.getElementById("retry").addEventListener("click", ()=>location.reload());
+  });
+}
+</script>
+</body>
+</html>
